@@ -2,217 +2,248 @@ from flask import Flask, jsonify, request, render_template_string, redirect, url
 
 app = Flask(__name__)
 
-# ---------------------------
-# SAMPLE DATABASE (TEMP DATA)
-# ---------------------------
 students = [
-    {"id": 1, "name": "Juan", "grade": 85, "section": "Stallman"},
-    {"id": 2, "name": "Maria", "grade": 90, "section": "Stallman"},
-    {"id": 3, "name": "Pedro", "grade": 70, "section": "Zion"}
+    {"id":1,"name":"Juan","grade":85,"section":"Stallman"},
+    {"id":2,"name":"Maria","grade":90,"section":"Stallman"},
+    {"id":3,"name":"Pedro","grade":70,"section":"Zion"}
 ]
 
-# ---------------------------
-# HOME PAGE
-# ---------------------------
-@app.route('/')
+# HOME
+@app.route("/")
 def home():
-    return redirect(url_for('list_students'))
+    return redirect(url_for("students_page"))
 
-
-# ---------------------------
-# VIEW ALL STUDENTS
-# ---------------------------
-@app.route('/students')
-def list_students():
+# STUDENT LIST
+@app.route("/students")
+def students_page():
 
     html = """
+    <html>
+    <head>
+    <title>Student Management</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+    body{
+    font-family:Arial;
+    background:#f2f2f2;
+    text-align:center;
+    }
+
+    h1{
+    background:#2c3e50;
+    color:white;
+    padding:15px;
+    }
+
+    table{
+    margin:auto;
+    border-collapse:collapse;
+    background:white;
+    width:70%;
+    }
+
+    th,td{
+    padding:10px;
+    border:1px solid #ccc;
+    }
+
+    th{
+    background:#3498db;
+    color:white;
+    }
+
+    a{
+    text-decoration:none;
+    color:blue;
+    }
+
+    .btn{
+    background:#27ae60;
+    color:white;
+    padding:8px;
+    }
+
+    </style>
+    </head>
+
+    <body>
+
     <h1>📚 Student Management System</h1>
 
-    <a href="/add_student_form">➕ Add Student</a>
-    <br><br>
-
-    <a href="/summary">📊 View Analytics Summary</a>
-
-    <hr>
+    <a class="btn" href="/add_form">➕ Add Student</a>
 
     <h2>Student List</h2>
 
-    <ul>
+    <table>
+    <tr>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Grade</th>
+    <th>Section</th>
+    <th>Action</th>
+    </tr>
+
     {% for s in students %}
-        <li>
-        ID: {{s.id}} - {{s.name}} 
-        (Grade: {{s.grade}}, Section: {{s.section}})
-
-        [<a href="/student/{{s.id}}">View</a>]
-
-        [<a href="/edit_student/{{s.id}}">Edit</a>]
-
-        [<a href="/delete_student/{{s.id}}">Delete</a>]
-        </li>
+    <tr>
+    <td>{{s.id}}</td>
+    <td>{{s.name}}</td>
+    <td>{{s.grade}}</td>
+    <td>{{s.section}}</td>
+    <td>
+    <a href="/edit/{{s.id}}">Edit</a> |
+    <a href="/delete/{{s.id}}">Delete</a>
+    </td>
+    </tr>
     {% endfor %}
-    </ul>
+    </table>
+
+    <br>
+
+    <a href="/summary">📊 View Analytics</a>
+
+    </body>
+    </html>
     """
 
     return render_template_string(html, students=students)
 
+# ADD FORM
+@app.route("/add_form")
+def add_form():
 
-# ---------------------------
-# VIEW SINGLE STUDENT
-# ---------------------------
-@app.route('/student/<int:id>')
-def get_student(id):
-
-    student = next((s for s in students if s["id"] == id), None)
-
-    if not student:
-        return "Student not found", 404
-
-    return jsonify(student)
-
-
-# ---------------------------
-# ADD STUDENT FORM
-# ---------------------------
-@app.route('/add_student_form')
-def add_student_form():
-
-    html = """
-    <h2>Add New Student</h2>
+    html="""
+    <h2>Add Student</h2>
 
     <form action="/add_student" method="POST">
 
-    Name:
-    <input type="text" name="name" required>
-    <br><br>
+    Name:<br>
+    <input name="name"><br><br>
 
-    Grade:
-    <input type="number" name="grade" required>
-    <br><br>
+    Grade:<br>
+    <input type="number" name="grade"><br><br>
 
-    Section:
-    <input type="text" name="section" required>
-    <br><br>
+    Section:<br>
+    <input name="section"><br><br>
 
     <button type="submit">Add Student</button>
 
     </form>
 
     <br>
-
-    <a href="/students">Back to Student List</a>
+    <a href="/students">Back</a>
     """
 
     return render_template_string(html)
 
-
-# ---------------------------
-# ADD STUDENT (POST)
-# ---------------------------
-@app.route('/add_student', methods=['POST'])
+# ADD STUDENT
+@app.route("/add_student", methods=["POST"])
 def add_student():
 
-    name = request.form.get("name")
-    grade = int(request.form.get("grade"))
-    section = request.form.get("section")
+    new_id=len(students)+1
 
-    new_id = len(students) + 1
+    students.append({
+        "id":new_id,
+        "name":request.form["name"],
+        "grade":int(request.form["grade"]),
+        "section":request.form["section"]
+    })
 
-    new_student = {
-        "id": new_id,
-        "name": name,
-        "grade": grade,
-        "section": section
-    }
+    return redirect(url_for("students_page"))
 
-    students.append(new_student)
-
-    return redirect(url_for('list_students'))
-
-
-# ---------------------------
 # EDIT STUDENT
-# ---------------------------
-@app.route('/edit_student/<int:id>', methods=['GET', 'POST'])
-def edit_student(id):
+@app.route("/edit/<int:id>", methods=["GET","POST"])
+def edit(id):
 
-    student = next((s for s in students if s["id"] == id), None)
+    student=next((s for s in students if s["id"]==id),None)
 
-    if not student:
-        return "Student not found", 404
+    if request.method=="POST":
 
-    if request.method == "POST":
+        student["name"]=request.form["name"]
+        student["grade"]=int(request.form["grade"])
+        student["section"]=request.form["section"]
 
-        student["name"] = request.form["name"]
-        student["grade"] = int(request.form["grade"])
-        student["section"] = request.form["section"]
+        return redirect(url_for("students_page"))
 
-        return redirect(url_for('list_students'))
-
-    html = """
+    html="""
     <h2>Edit Student</h2>
 
     <form method="POST">
 
-    Name:
-    <input type="text" name="name" value="{{student.name}}">
-    <br><br>
+    Name:<br>
+    <input name="name" value="{{s.name}}"><br><br>
 
-    Grade:
-    <input type="number" name="grade" value="{{student.grade}}">
-    <br><br>
+    Grade:<br>
+    <input type="number" name="grade" value="{{s.grade}}"><br><br>
 
-    Section:
-    <input type="text" name="section" value="{{student.section}}">
-    <br><br>
+    Section:<br>
+    <input name="section" value="{{s.section}}"><br><br>
 
-    <button type="submit">Update Student</button>
+    <button type="submit">Update</button>
 
     </form>
 
     <br>
-
     <a href="/students">Back</a>
     """
 
-    return render_template_string(html, student=student)
+    return render_template_string(html, s=student)
 
-
-# ---------------------------
 # DELETE STUDENT
-# ---------------------------
-@app.route('/delete_student/<int:id>')
-def delete_student(id):
+@app.route("/delete/<int:id>")
+def delete(id):
 
     global students
+    students=[s for s in students if s["id"]!=id]
 
-    students = [s for s in students if s["id"] != id]
+    return redirect(url_for("students_page"))
 
-    return redirect(url_for('list_students'))
-
-
-# ---------------------------
-# ANALYTICS SUMMARY
-# ---------------------------
-@app.route('/summary')
+# ANALYTICS
+@app.route("/summary")
 def summary():
 
-    grades = [s["grade"] for s in students]
+    grades=[s["grade"] for s in students]
 
-    if len(grades) == 0:
-        return jsonify({"message": "No students available"})
+    avg=sum(grades)/len(grades)
 
-    average = sum(grades) / len(grades)
+    passed=len([g for g in grades if g>=75])
+    failed=len(grades)-passed
 
-    passed = len([g for g in grades if g >= 75])
-    failed = len(grades) - passed
+    html="""
+    <html>
 
-    return jsonify({
-        "average_grade": average,
-        "passed_students": passed,
-        "failed_students": failed,
-        "total_students": len(grades)
-    })
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <h2>📊 Student Analytics</h2>
 
-if __name__ == "__main__":
+    <p>Average Grade: {{avg}}</p>
+    <p>Passed: {{passed}}</p>
+    <p>Failed: {{failed}}</p>
+
+    <canvas id="chart" width="300"></canvas>
+
+    <script>
+    var ctx=document.getElementById('chart');
+
+    new Chart(ctx,{
+        type:'pie',
+        data:{
+            labels:['Passed','Failed'],
+            datasets:[{
+                data:[{{passed}},{{failed}}]
+            }]
+        }
+    });
+    </script>
+
+    <br>
+    <a href="/students">Back</a>
+
+    </html>
+    """
+
+    return render_template_string(html,avg=avg,passed=passed,failed=failed)
+
+if __name__=="__main__":
     app.run()
