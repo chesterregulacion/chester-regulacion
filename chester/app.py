@@ -21,20 +21,22 @@ def students_page():
     <html>
     <head>
     <title>Student Management</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+
     body{
     font-family:Arial;
-    background:#f2f2f2;
+    background:#f4f6f9;
     text-align:center;
+    margin:0;
     }
 
     h1{
     background:#2c3e50;
     color:white;
-    padding:15px;
+    padding:20px;
+    margin:0;
     }
 
     table{
@@ -42,11 +44,12 @@ def students_page():
     border-collapse:collapse;
     background:white;
     width:70%;
+    box-shadow:0 0 10px rgba(0,0,0,0.2);
     }
 
     th,td{
-    padding:10px;
-    border:1px solid #ccc;
+    padding:12px;
+    border:1px solid #ddd;
     }
 
     th{
@@ -54,15 +57,29 @@ def students_page():
     color:white;
     }
 
+    tr:hover{
+    background:#f2f2f2;
+    }
+
     a{
     text-decoration:none;
-    color:blue;
     }
 
     .btn{
     background:#27ae60;
     color:white;
-    padding:8px;
+    padding:10px 15px;
+    border-radius:5px;
+    margin:10px;
+    display:inline-block;
+    }
+
+    .btn:hover{
+    background:#219150;
+    }
+
+    .link{
+    color:#2980b9;
     }
 
     </style>
@@ -92,16 +109,15 @@ def students_page():
     <td>{{s.grade}}</td>
     <td>{{s.section}}</td>
     <td>
-    <a href="/edit/{{s.id}}">Edit</a> |
-    <a href="/delete/{{s.id}}">Delete</a>
+    <a class="link" href="/edit/{{s.id}}">Edit</a> |
+    <a class="link" href="/delete/{{s.id}}">Delete</a>
     </td>
     </tr>
     {% endfor %}
     </table>
 
     <br>
-
-    <a href="/summary">📊 View Analytics</a>
+    <a class="btn" href="/summary">📊 View Analytics</a>
 
     </body>
     </html>
@@ -114,25 +130,83 @@ def students_page():
 def add_form():
 
     html="""
-    <h2>Add Student</h2>
+    <html>
+    <head>
+
+    <style>
+
+    body{
+    font-family:Arial;
+    background:#ecf0f1;
+    text-align:center;
+    }
+
+    .form-box{
+    background:white;
+    width:350px;
+    margin:auto;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.2);
+    margin-top:50px;
+    }
+
+    input{
+    width:90%;
+    padding:10px;
+    margin:5px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    }
+
+    button{
+    background:#27ae60;
+    color:white;
+    padding:10px;
+    width:95%;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    }
+
+    button:hover{
+    background:#219150;
+    }
+
+    a{
+    text-decoration:none;
+    color:#2980b9;
+    }
+
+    </style>
+
+    </head>
+
+    <body>
+
+    <div class="form-box">
+
+    <h2>➕ Add Student</h2>
 
     <form action="/add_student" method="POST">
 
-    Name:<br>
-    <input name="name"><br><br>
+    <input name="name" placeholder="Student Name" required><br>
 
-    Grade:<br>
-    <input type="number" name="grade"><br><br>
+    <input type="number" name="grade" placeholder="Grade" required><br>
 
-    Section:<br>
-    <input name="section"><br><br>
+    <input name="section" placeholder="Section" required><br><br>
 
     <button type="submit">Add Student</button>
 
     </form>
 
     <br>
-    <a href="/students">Back</a>
+    <a href="/students">⬅ Back</a>
+
+    </div>
+
+    </body>
+    </html>
     """
 
     return render_template_string(html)
@@ -167,25 +241,32 @@ def edit(id):
         return redirect(url_for("students_page"))
 
     html="""
+    <html>
+    <body style="font-family:Arial;text-align:center;background:#ecf0f1;">
+
+    <div style="background:white;width:350px;margin:auto;padding:30px;border-radius:10px;margin-top:50px;box-shadow:0 0 10px rgba(0,0,0,0.2);">
+
     <h2>Edit Student</h2>
 
     <form method="POST">
 
-    Name:<br>
     <input name="name" value="{{s.name}}"><br><br>
 
-    Grade:<br>
     <input type="number" name="grade" value="{{s.grade}}"><br><br>
 
-    Section:<br>
     <input name="section" value="{{s.section}}"><br><br>
 
-    <button type="submit">Update</button>
+    <button style="background:#3498db;color:white;padding:10px;border:none;border-radius:5px;">Update</button>
 
     </form>
 
     <br>
     <a href="/students">Back</a>
+
+    </div>
+
+    </body>
+    </html>
     """
 
     return render_template_string(html, s=student)
@@ -205,7 +286,7 @@ def summary():
 
     grades=[s["grade"] for s in students]
 
-    avg=sum(grades)/len(grades)
+    avg=round(sum(grades)/len(grades),2)
 
     passed=len([g for g in grades if g>=75])
     failed=len(grades)-passed
@@ -215,11 +296,13 @@ def summary():
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <body style="font-family:Arial;text-align:center;background:#f4f6f9;">
+
     <h2>📊 Student Analytics</h2>
 
-    <p>Average Grade: {{avg}}</p>
-    <p>Passed: {{passed}}</p>
-    <p>Failed: {{failed}}</p>
+    <p><b>Average Grade:</b> {{avg}}</p>
+    <p><b>Passed:</b> {{passed}}</p>
+    <p><b>Failed:</b> {{failed}}</p>
 
     <canvas id="chart" width="300"></canvas>
 
@@ -237,13 +320,14 @@ def summary():
     });
     </script>
 
-    <br>
-    <a href="/students">Back</a>
+    <br><br>
+    <a href="/students">⬅ Back</a>
 
+    </body>
     </html>
     """
 
     return render_template_string(html,avg=avg,passed=passed,failed=failed)
 
 if __name__=="__main__":
-    app.run()
+    app.run(debug=True)
